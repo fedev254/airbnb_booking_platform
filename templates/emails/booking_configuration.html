@@ -1,0 +1,28 @@
+<!-- In templates/emails/booking_confirmation.html -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Booking Confirmation</title>
+</head>
+<body>
+    <h2>Booking Confirmation</h2>
+    <p>Hi {{ user.first_name|default:'Guest' }},</p>
+    
+    <p>Thank you for your booking! Here are the details of your reservation:</p>
+    
+    <ul>
+        <li><strong>Booking ID:</strong> #{{ booking.id }}</li>
+        <li><strong>Apartment:</strong> {{ booking.apartment.title }}</li>
+        <li><strong>Address:</strong> {{ booking.apartment.address }}, {{ booking.apartment.city }}</li>
+        <li><strong>Check-in Date:</strong> {{ booking.check_in }}</li>
+        <li><strong>Check-out Date:</strong> {{ booking.check_out }}</li>
+        <li><strong>Number of Guests:</strong> {{ booking.guests }}</li>
+        <li><strong>Total Price:</strong> KES {{ booking.total_price }}</li>
+    </ul>
+    
+    <p>We look forward to hosting you!</p>
+    
+    <p>Sincerely,<br>The Airbnb Platform Team</p>
+</body>
+</html>
