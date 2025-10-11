@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from apartments.models import Apartment
+from apartments.models import Unit
 from django.db.models import Q, CheckConstraint, F
 
 class Booking(models.Model):
@@ -11,7 +11,7 @@ class Booking(models.Model):
     STATUS_CHOICES = [(STATUS_PENDING,'Pending'),(STATUS_CONFIRMED,'Confirmed'),(STATUS_CANCELLED,'Cancelled'),(STATUS_COMPLETED, 'Completed')]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bookings')
-    apartment = models.ForeignKey(Apartment, on_delete=models.CASCADE, related_name='bookings')
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='bookings')
     check_in = models.DateField(db_index=True)
     check_out = models.DateField(db_index=True)
     guests = models.PositiveIntegerField(default=1)
@@ -25,4 +25,4 @@ class Booking(models.Model):
         ]
 
     def __str__(self):
-        return f"Booking {self.id} ({self.apartment})"
+        return f"Booking {self.id} ({self.unit})"

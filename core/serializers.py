@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 from .models import User
-
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for the User model, used for reading user data."""
     class Meta:
@@ -29,3 +29,16 @@ class RegisterSerializer(serializers.ModelSerializer):
             phone_number=validated_data.get('phone_number', '')
         )
         return user
+    
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        # Add custom claims
+        token['username'] = user.username
+        token['email'] = user.email
+        token['role'] = user.role
+        # ... you can add any other fields you want to include in the token payload
+
+        return token

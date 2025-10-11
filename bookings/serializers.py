@@ -2,22 +2,24 @@
 
 from rest_framework import serializers
 from .models import Booking
-from apartments.serializers import ApartmentSerializer
+# --- CHANGE 1: Import the correct serializer ---
+from apartments.serializers import UnitSerializer
 from core.serializers import UserSerializer
-from apartments.models import Apartment
+from apartments.models import Unit
 import datetime
 
 class BookingSerializer(serializers.ModelSerializer):
     """
-    Serializer for viewing booking details. Includes nested apartment and user data.
+    Serializer for viewing booking details. Includes nested unit and user data.
     """
-    apartment = ApartmentSerializer(read_only=True)
+    # --- CHANGE 2: Use UnitSerializer ---
+    unit = UnitSerializer(read_only=True)
     user = UserSerializer(read_only=True)
 
     class Meta:
         model = Booking
         fields = [
-            'id', 'apartment', 'user', 'check_in', 'check_out', 
+            'id', 'unit', 'user', 'check_in', 'check_out', 
             'guests', 'status', 'total_price', 'created_at'
         ]
 
@@ -26,31 +28,31 @@ class CreateBookingSerializer(serializers.ModelSerializer):
     """
     Serializer for creating a new booking. Validates input and calculates price.
     """
-    apartment_id = serializers.PrimaryKeyRelatedField(
-        queryset=Apartment.objects.filter(is_active=True), 
-        source='apartment', 
+    # --- CHANGE 3: The primary key now refers to a Unit ---
+    unit_id = serializers.PrimaryKeyRelatedField(
+        queryset=Unit.objects.filter(is_active=True), 
+        source='unit', 
         write_only=True
     )
 
     class Meta:
         model = Booking
-        fields = ['apartment_id', 'check_in', 'check_out', 'guests']
+        fields = ['unit_id', 'check_in', 'check_out', 'guests']
 
     def validate(self, data):
         """
-        Perform custom validation for the booking.
+        Perform custom validation for the booking against the UNIT.
         """
-        # 1. Check that check_out date is after check_in date
-        if data['check_out'] <= data['check_in']:
-            raise serializers.ValidationError("Check-out date must be after check-in date.")
-
-        # 2. Check that the apartment is not already booked for the selected dates
-        apartment = data['apartment']
+        # --- CHANGE 4: The entire validation logic now uses 'unit' ---
+        unit = data['unit']
         check_in = data['check_in']
         check_out = data['check_out']
-        
+
+        if check_out <= check_in:
+            raise serializers.ValidationError("Check-out date must be after check-in date.")
+
         overlapping_bookings = Booking.objects.filter(
-            apartment=apartment,
+            unit=unit,
             status__in=['pending', 'confirmed'],
             check_in__lt=check_out,
             check_out__gt=check_in
@@ -58,37 +60,35 @@ class CreateBookingSerializer(serializers.ModelSerializer):
 
         if overlapping_bookings:
             raise serializers.ValidationError(
-                "This apartment is already booked for the selected dates."
+                "This unit is already booked for the selected dates."
             )
         
-        # 3. Check if the number of guests does not exceed the apartment's capacity
-        if data['guests'] > apartment.max_guests:
+        if data['guests'] > unit.max_guests:
             raise serializers.ValidationError(
-                f"The number of guests ({data['guests']}) exceeds the maximum capacity ({apartment.max_guests})."
+                f"The number of guests ({data['guests']}) exceeds the maximum capacity ({unit.max_guests})."
             )
 
         return data
 
     def create(self, validated_data):
-        """
-        Create the booking instance, assign the user, and calculate the total price.
-        """
-        apartment = validated_data['apartment']
+        # --- CHANGE 5: Price calculation now uses the unit's price ---
+        unit = validated_data['unit']
         check_in = validated_data['check_in']
         check_out = validated_data['check_out']
-
-        # Calculate number of nights
         num_nights = (check_out - check_in).days
-        if num_nights <= 0:
-            num_nights = 1 # Minimum 1 night charge
+        total_price = unit.price_per_night * num_nights
 
-        # Calculate total price
-        total_price = apartment.price_per_night * num_nights
-
-        # Create the booking instance
         booking = Booking.objects.create(
             user=self.context['request'].user,
             total_price=total_price,
-            **validated_data
+            unit=validated_data.get('unit'),
+            check_in=check_in,
+            check_out=check_out,
+            guests=validated_data.get('guests'),
         )
         return booking
+class BookingSerializer(serializers.ModelSerializer):
+    unit = UnitSerializer(read_only=True)
+    class Meta:
+        model = Booking
+        fields = '__all__'

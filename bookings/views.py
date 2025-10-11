@@ -1,5 +1,5 @@
 # In bookings/views.py
-
+from rest_framework.views import APIView
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from .models import Booking
@@ -29,11 +29,26 @@ class BookingViewSet(viewsets.ModelViewSet):
         """
         This view should only return bookings for the currently authenticated user.
         """
-        return self.request.user.bookings.all().order_by('-created_at')
+        return Booking.objects.filter(user=self.request.user).select_related(
+            'unit__property'
+        ).prefetch_related('unit__images')
 
     def perform_create(self, serializer):
         """
         Pass the current user to the serializer's create method.
         (Our serializer now handles this in its context, so this is an alternative way)
         """
-        serializer.save() # User is already being added in the serializer's context
+        serializer.save(user=self.request.user) # User is already being added in the serializer's context
+
+class MyBookingsView(APIView):
+    """
+    API endpoint to get all bookings for the current user.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        bookings = Booking.objects.filter(user=request.user).select_related(
+            'unit__property'
+        ).prefetch_related('unit__images')
+        serializer = BookingSerializer(bookings, many=True)
+        return Response(serializer.data)
