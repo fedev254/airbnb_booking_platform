@@ -1,11 +1,15 @@
 # In apartments/serializers.py
 
 from rest_framework import serializers
-from .models import Property, Unit, UnitImage, BlockedDate
+from .models import Property, PropertyImage, Unit, UnitImage, BlockedDate
 from core.serializers import UserSerializer
 from datetime import date
 
 # --- Core Public-Facing Serializers ---
+class PropertyImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PropertyImage
+        fields = ['id', 'image', 'caption']
 
 class UnitImageSerializer(serializers.ModelSerializer):
     """Serializer for viewing unit images."""
@@ -32,12 +36,13 @@ class PropertySerializer(serializers.ModelSerializer):
     Shows owner details. The owner is set automatically in the view.
     """
     owner = UserSerializer(read_only=True)
+    images = PropertyImageSerializer(many=True, read_only=True)
     #units = UnitSerializer(many=True, read_only=True)
     class Meta:
         model = Property
         fields = [
             'id', 'owner', 'title', 'description', 'address', 'city',
-            'country', 'is_active', 'created_at'
+            'country', 'is_active', 'created_at', 'images'
         ]
 
 
@@ -121,3 +126,8 @@ class UnitImageUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnitImage
         fields = ['id', 'image', 'caption']
+
+class UnitImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UnitImage
+        fields = '__all__'

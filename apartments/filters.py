@@ -1,18 +1,34 @@
 # In apartments/filters.py
 
 from django_filters import rest_framework as filters
-from .models import Unit, BlockedDate
+from .models import Property, Unit, BlockedDate
 from bookings.models import Booking
 from django.db.models import Q
 from datetime import datetime
 
+
+class PropertyFilter(filters.FilterSet):
+    search = filters.CharFilter(method='filter_by_keyword', label="Search by city, property title, or address")
+    
+    # You could add other property-level filters here later, e.g., filter by amenities_available
+    
+    class Meta:
+        model = Property
+        fields = ['search']
+
+    def filter_by_keyword(self, queryset, name, value):
+        return queryset.filter(
+            Q(title__icontains=value) |
+            Q(city__icontains=value) |
+            Q(address__icontains=value)
+        )
 class UnitFilter(filters.FilterSet):
     """
     FilterSet for the Unit model to enable searching and filtering.
     """
     # Filter by properties of the parent Property
     city = filters.CharFilter(field_name='property__city', lookup_expr='icontains')
-
+    search = filters.CharFilter(method='filter_by_keyword', label="Search by city, property title, or address")
     # Filter by properties of the Unit itself
     min_price = filters.NumberFilter(field_name='price_per_night', lookup_expr='gte')
     max_price = filters.NumberFilter(field_name='price_per_night', lookup_expr='lte')
@@ -25,8 +41,19 @@ class UnitFilter(filters.FilterSet):
     
     class Meta:
         model = Unit
-        fields = ['city', 'min_price', 'max_price', 'min_guests', 'bedrooms', 'check_in', 'check_out']
+        fields = ['search', 'city', 'min_price', 'max_price', 'min_guests', 'bedrooms', 'check_in', 'check_out']
 
+
+    def filter_by_keyword(self, queryset, name, value):
+        """
+        Search for a keyword in property title, city, and address.
+        Uses Q objects for a complex OR query.
+        """
+        return queryset.filter(
+            Q(property__title__icontains=value) |
+            Q(property__city__icontains=value) |
+            Q(property__address__icontains=value)
+        )
     def filter_by_availability(self, queryset, name, value):
         check_in_str = self.data.get('check_in')
         check_out_str = self.data.get('check_out')

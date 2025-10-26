@@ -1,7 +1,7 @@
 # In apartments/admin.py
 
 from django.contrib import admin
-from .models import Property, Unit, UnitImage, BlockedDate
+from .models import Property, PropertyImage, Unit, UnitImage, BlockedDate
 
 # This allows us to add multiple units directly when editing a property page
 class UnitInline(admin.TabularInline):
@@ -13,6 +13,9 @@ class UnitInline(admin.TabularInline):
 class UnitImageInline(admin.TabularInline):
     model = UnitImage
     extra = 1
+class PropertyImageInline(admin.TabularInline):
+    model = PropertyImage
+    extra = 1
 
 @admin.register(Property)
 class PropertyAdmin(admin.ModelAdmin):
@@ -20,7 +23,7 @@ class PropertyAdmin(admin.ModelAdmin):
     list_filter = ('city', 'country', 'is_active')
     search_fields = ('title', 'description', 'city')
     # When you view a Property in the admin, you can see and edit its Units directly
-    inlines = [UnitInline]
+    inlines = [PropertyImageInline]
 
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):

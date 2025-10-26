@@ -42,3 +42,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         # ... you can add any other fields you want to include in the token payload
 
         return token
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'phone_number')
+        read_only_fields = ('username', 'email')
